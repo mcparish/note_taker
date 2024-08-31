@@ -16,13 +16,17 @@ router.get('/:id', (req, res) => {
 
 // POST a new note
 router.post('/', async (req, res) => {
-    const note = new Note({ title: req.body.title, content: req.body.content });
-    try {
-        const newNote = await note.save();
-        res.status(201).json(newNote);
-    } catch (err) {
-        res.status(400).json({ message: err.message });
-    }
+    const notes = JSON.parse(fs.readFileSync('./db/db.json', 'utf8'));
+    console.log("reading notes");
+    console.log(notes);
+    const note = {
+        id: notes.length + 1,
+        title: req.body.title,
+        text: req.body.text
+    };
+    notes.push(note);
+    fs.writeFileSync('./db/db.json', JSON.stringify(notes));
+    res.json(note);
 });
 
 // UPDATE a note
@@ -43,12 +47,15 @@ router.patch('/:id', async (req, res) => {
 
 // DELETE a note
 router.delete('/:id', async (req, res) => {
-    try {
-        await res.note.remove();
-        res.json({ message: 'Note deleted.' });
-    } catch (err) {
-        res.status(500).json({ message: err.message });
+    const notes = JSON.parse(fs.readFileSync('./db/db.json', 'utf8'));
+    const note = notes.find(note => note.id === parseInt(req.params.id));
+    if (note == null) {
+        return res.status(404).json({ message: 'Cannot find note' });
     }
+    const index = notes.indexOf(note);
+    notes.splice(index, 1);
+    fs.writeFileSync('./db/db.json', JSON.stringify(notes));
+    res.json({ message: 'Note deleted' });
 });
 
 module.exports = router;
